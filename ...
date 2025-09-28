@@ -1,0 +1,317 @@
+-- LocalScript in StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+
+local walkSpeedValue, jumpHeightValue = 16, 50
+
+-- ScreenGui
+local gui = Instance.new("ScreenGui")
+gui.Name = "CustomUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 320, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -150)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = false
+mainFrame.Parent = gui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+
+-- Top Frame for dragging
+local topFrame = Instance.new("Frame")
+topFrame.Size = UDim2.new(1, 0, 0, 60)
+topFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+topFrame.BorderSizePixel = 0
+topFrame.Parent = mainFrame
+Instance.new("UICorner", topFrame).CornerRadius = UDim.new(0, 12)
+
+-- Player Thumbnail
+local thumb = Instance.new("ImageLabel")
+thumb.Size = UDim2.new(0, 50, 0, 50)
+thumb.Position = UDim2.new(0, 5, 0.5, -25)
+thumb.BackgroundTransparency = 1
+thumb.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+thumb.Parent = topFrame
+
+-- Display Name
+local displayName = Instance.new("TextLabel")
+displayName.Size = UDim2.new(0, 200, 0, 25)
+displayName.Position = UDim2.new(0, 60, 0, 8)
+displayName.BackgroundTransparency = 1
+displayName.Font = Enum.Font.GothamBold
+displayName.TextSize = 18
+displayName.TextColor3 = Color3.fromRGB(255, 255, 255)
+displayName.TextXAlignment = Enum.TextXAlignment.Left
+displayName.Text = player.DisplayName
+displayName.Parent = topFrame
+
+-- Username
+local username = Instance.new("TextLabel")
+username.Size = UDim2.new(0, 200, 0, 20)
+username.Position = UDim2.new(0, 60, 0, 30)
+username.BackgroundTransparency = 1
+username.Font = Enum.Font.Gotham
+username.TextSize = 14
+username.TextColor3 = Color3.fromRGB(180, 180, 180)
+username.TextXAlignment = Enum.TextXAlignment.Left
+username.Text = "@" .. player.Name
+username.Parent = topFrame
+
+-- Dragging logic
+local dragging, dragInput, startPos, startFramePos
+topFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		startPos = input.Position
+		startFramePos = mainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+topFrame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+UIS.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - startPos
+		mainFrame.Position = UDim2.new(
+			startFramePos.X.Scale, startFramePos.X.Offset + delta.X,
+			startFramePos.Y.Scale, startFramePos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- Uptime
+local uptime = Instance.new("TextLabel")
+uptime.Size = UDim2.new(1, -10, 0, 20)
+uptime.Position = UDim2.new(0, 5, 0, 65)
+uptime.BackgroundTransparency = 1
+uptime.Font = Enum.Font.Gotham
+uptime.TextSize = 14
+uptime.TextColor3 = Color3.fromRGB(255, 255, 255)
+uptime.TextXAlignment = Enum.TextXAlignment.Left
+uptime.Text = "Uptime: 00:00:00"
+uptime.Parent = mainFrame
+
+-- Health label + bar
+local healthLabel = Instance.new("TextLabel")
+healthLabel.Size = UDim2.new(1, -10, 0, 20)
+healthLabel.Position = UDim2.new(0, 5, 0, 90)
+healthLabel.BackgroundTransparency = 1
+healthLabel.Font = Enum.Font.GothamBold
+healthLabel.TextSize = 14
+healthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+healthLabel.TextXAlignment = Enum.TextXAlignment.Left
+healthLabel.Text = "Health"
+healthLabel.Parent = mainFrame
+
+local healthBack = Instance.new("Frame")
+healthBack.Size = UDim2.new(0.6, 0, 0, 10)
+healthBack.Position = UDim2.new(0, 5, 0, 110)
+healthBack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+healthBack.BorderSizePixel = 0
+healthBack.Parent = mainFrame
+Instance.new("UICorner", healthBack).CornerRadius = UDim.new(1, 0)
+
+local healthFill = Instance.new("Frame")
+healthFill.Size = UDim2.new(1, 0, 1, 0)
+healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+healthFill.BorderSizePixel = 0
+healthFill.Parent = healthBack
+Instance.new("UICorner", healthFill).CornerRadius = UDim.new(1, 0)
+
+local healthNumber = Instance.new("TextLabel")
+healthNumber.Size = UDim2.new(0.3, -5, 0, 20)
+healthNumber.Position = UDim2.new(0.65, 5, 0, 105)
+healthNumber.BackgroundTransparency = 1
+healthNumber.Font = Enum.Font.Gotham
+healthNumber.TextSize = 14
+healthNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
+healthNumber.TextXAlignment = Enum.TextXAlignment.Left
+healthNumber.Text = "100"
+healthNumber.Parent = mainFrame
+
+-- Slider Factory
+local function createSlider(name, positionY, defaultValue, minVal, maxVal, callback)
+	local sliderFrame = Instance.new("Frame")
+	sliderFrame.Size = UDim2.new(1, -10, 0, 40)
+	sliderFrame.Position = UDim2.new(0, 5, 0, positionY)
+	sliderFrame.BackgroundTransparency = 1
+	sliderFrame.Parent = mainFrame
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0, 100, 0, 20)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Text = name
+	label.Parent = sliderFrame
+
+	local back = Instance.new("Frame")
+	back.Size = UDim2.new(0.6, 0, 0, 10)
+	back.Position = UDim2.new(0, 0, 0, 25)
+	back.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	back.BorderSizePixel = 0
+	back.Parent = sliderFrame
+	Instance.new("UICorner", back).CornerRadius = UDim.new(1, 0)
+
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new(defaultValue/maxVal, 0, 1, 0)
+	fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	fill.BorderSizePixel = 0
+	fill.Parent = back
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+	local valueLabel = Instance.new("TextLabel")
+	valueLabel.Size = UDim2.new(0.3, -5, 0, 20)
+	valueLabel.Position = UDim2.new(0.65, 5, 0, 20)
+	valueLabel.BackgroundTransparency = 1
+	valueLabel.Font = Enum.Font.Gotham
+	valueLabel.TextSize = 14
+	valueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	valueLabel.TextXAlignment = Enum.TextXAlignment.Left
+	valueLabel.Text = tostring(defaultValue)
+	valueLabel.Parent = sliderFrame
+
+	local editing = false
+	valueLabel.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and not editing then
+			editing = true
+			local box = Instance.new("TextBox")
+			box.Size = valueLabel.Size
+			box.Position = valueLabel.Position
+			box.BackgroundTransparency = 0.2
+			box.BackgroundColor3 = Color3.fromRGB(40,40,40)
+			box.Font = Enum.Font.Gotham
+			box.TextSize = 14
+			box.TextColor3 = Color3.fromRGB(255,255,255)
+			box.Text = valueLabel.Text
+			box.Parent = sliderFrame
+			valueLabel.Visible = false
+
+			box.FocusLost:Connect(function(enterPressed)
+				if enterPressed then
+					local num = tonumber(box.Text)
+					if num then
+						num = math.clamp(num, minVal, maxVal)
+						fill.Size = UDim2.new(num/maxVal, 0, 1, 0)
+						valueLabel.Text = tostring(num)
+						callback(num)
+					end
+				end
+				editing = false
+				valueLabel.Visible = true
+				box:Destroy()
+			end)
+		end
+	end)
+
+	back.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			local moveConn, releaseConn
+			moveConn = UIS.InputChanged:Connect(function(input2)
+				if input2.UserInputType == Enum.UserInputType.MouseMovement then
+					local rel = math.clamp((input2.Position.X - back.AbsolutePosition.X)/back.AbsoluteSize.X,0,1)
+					local num = math.floor(minVal + (maxVal-minVal)*rel)
+					fill.Size = UDim2.new(rel,0,1,0)
+					valueLabel.Text = tostring(num)
+					callback(num)
+				end
+			end)
+			releaseConn = UIS.InputEnded:Connect(function(input2)
+				if input2.UserInputType == Enum.UserInputType.MouseButton1 then
+					moveConn:Disconnect()
+					releaseConn:Disconnect()
+				end
+			end)
+		end
+	end)
+end
+
+-- WalkSpeed slider
+createSlider("WalkSpeed", 140, walkSpeedValue, 0, 200, function(val)
+	walkSpeedValue = val
+	if humanoid then humanoid.WalkSpeed = val end
+end)
+
+-- JumpHeight slider (always JumpHeight)
+createSlider("JumpHeight", 190, jumpHeightValue, 0, 200, function(val)
+	jumpHeightValue = val
+	if humanoid then
+		humanoid.UseJumpPower = false
+		humanoid.JumpHeight = val
+	end
+end)
+
+-- Toggle button to show/hide
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(0, 100, 0, 30)
+toggle.Position = UDim2.new(1, -110, 1, -40)
+toggle.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+toggle.Text = "Toggle UI"
+toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 14
+toggle.Parent = gui
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
+toggle.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+end)
+
+-- Update loop
+task.spawn(function()
+	while task.wait(0.5) do
+		if humanoid then
+			local healthPercent = humanoid.Health / humanoid.MaxHealth
+			TweenService:Create(
+				healthFill,
+				TweenInfo.new(0.3, Enum.EasingStyle.Bounce),
+				{Size = UDim2.new(math.clamp(healthPercent, 0, 1), 0, 1, 0)}
+			):Play()
+			healthNumber.Text = tostring(math.floor(humanoid.Health))
+			if healthPercent > 0.75 then
+				healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+			elseif healthPercent > 0.5 then
+				healthFill.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+			elseif healthPercent > 0.25 then
+				healthFill.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+			else
+				healthFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+			end
+		end
+
+		local t = math.floor(workspace.DistributedGameTime)
+		local h = math.floor(t / 3600)
+		local m = math.floor((t % 3600) / 60)
+		local s = t % 60
+		uptime.Text = string.format("Uptime: %02d:%02d:%02d", h, m, s)
+	end
+end)
+
+-- Setup humanoid on spawn
+local function setupHumanoid(char)
+	humanoid = char:WaitForChild("Humanoid")
+	humanoid.WalkSpeed = walkSpeedValue
+	humanoid.UseJumpPower = false
+	humanoid.JumpHeight = jumpHeightValue
+end
+if player.Character then
+	setupHumanoid(player.Character)
+end
+player.CharacterAdded:Connect(setupHumanoid)
